@@ -125,4 +125,22 @@ $headers = @{}
 $headers.Add("Host",$SiteHostName)
 Invoke-WebRequest -Uri http://localhost/ -Headers $headers | Format-Table Content, StatusCode
 
+# dir Cert:\LocalMachine/my
+
+$cert = (Get-ChildItem cert:\LocalMachine\My   | where-object { $_.Subject -like "*" }   | Select-Object -First 1).Thumbprint
+
+"Cert Hash: " + $cert
+
+# http.sys mapping of ip/hostheader to cert
+$guid = [guid]::NewGuid().ToString("B")
+netsh http add sslcert hostnameport="${SiteHostName}:443" certhash=$cert certstorename=MY appid="$guid"
+
+# iis site mapping ip/hostheader/port to cert - also maps certificate if it exists
+# for the particular ip/port/hostheader combo
+New-WebBinding -name $SiteHostName -Protocol https  -HostHeader $SiteHostName -Port 443 -SslFlags 1
+
+# netsh http delete sslcert hostnameport="${hostname}:443"
+# netsh http show sslcert
+
+
 # Complete
