@@ -7,11 +7,15 @@
 
 clear
 
+# $SiteHostName = "www.localhost.local" 
+$SiteHostName = Read-Host -Prompt "Enter Site" 
+$SiteFolderPath = "D:\Sites\$SiteHostName"              # Website Folder
 
-$SiteFolderPath = "C:\WebSite11"              # Website Folder
-$SiteAppPool = "MyAppPool11"                  # Application Pool Name
-$SiteName = "MySite11"                        # IIS Site Name
-$SiteHostName = "localhost11"                 # Host Header
+#$SiteAppPool = "MyAppPool"                  # Application Pool Name
+$SiteAppPool = $SiteHostName                 # Application Pool Name
+#$SiteName = "MySite"                        # IIS Site Name
+$SiteName = $SiteHostName                      # IIS Site Name
+                # Host Header
 
 function Execute-WithRetry([ScriptBlock] $command) {
     $attemptCount = 0
@@ -93,7 +97,7 @@ if ($manager.Sites[$SiteName] -eq $null) {
 #Stop-IISCommitDelay -commit $false -WarningAction SilentlyContinue
 #Stop-IISCommitDelay -commit $false -WarningAction SilentlyContinue
     New-Item $SiteFolderPath -type Directory -ErrorAction SilentlyContinue
-    Set-Content $SiteFolderPath\Default.htm "<h1>Hello $SiteName </h1>"
+    Set-Content $SiteFolderPath\Default.htm "Site: $SiteName"
     New-IISSite -Name $SiteName -BindingInformation :80:$SiteHostName -PhysicalPath $SiteFolderPath
     Set-ItemProperty IIS:\Sites\$SiteName -name applicationPool -value $SiteAppPool
     $manager.CommitChanges()
