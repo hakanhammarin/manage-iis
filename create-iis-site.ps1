@@ -8,8 +8,14 @@
 clear
 
 # $SiteHostName = "www.localhost.local" 
+
 $SiteHostName = Read-Host -Prompt "Enter Site" 
 $SiteFolderPath = "D:\Sites\$SiteHostName"              # Website Folder
+$SiteRoot = "D:\Sites\"
+# $AMEACurrentVersionRoot = $SiteRoot+"_AMEaWEb_v20180711_002"
+$AMEACurrentVersionRoot = $SiteRoot+"_current.ameaweb.se"
+
+
 
 #$SiteAppPool = "MyAppPool"                  # Application Pool Name
 $SiteAppPool = $SiteHostName                 # Application Pool Name
@@ -69,7 +75,7 @@ Stop-IISCommitDelay -commit $false -WarningAction SilentlyContinue
 
 # The pattern here is to get the things you want, then check if they are null
  mkdir "C:\Sites" -ErrorAction SilentlyContinue
- mkdir $SiteFolderPath -ErrorAction SilentlyContinue
+ #mkdir $SiteFolderPath -ErrorAction SilentlyContinue
 $manager = Get-IISServerManager
 
 if ($manager.ApplicationPools[$SiteAppPool] -eq $null) {
@@ -96,8 +102,10 @@ if ($manager.Sites[$SiteName] -eq $null) {
  # In case previous invocations left one open
 #Stop-IISCommitDelay -commit $false -WarningAction SilentlyContinue
 #Stop-IISCommitDelay -commit $false -WarningAction SilentlyContinue
-    New-Item $SiteFolderPath -type Directory -ErrorAction SilentlyContinue
-    Set-Content $SiteFolderPath\Default.htm "Site: $SiteName"
+    # New-Item $SiteFolderPath -type Directory -ErrorAction SilentlyContinue
+# cmd mklink /J $SiteRoot+$SiteName $AMEaCurrentVersionRoot
+New-Item -Path $SiteRoot$SiteName -ItemType Junction -Value $AMEACurrentVersionRoot
+#    Set-Content $SiteFolderPath\Default.htm "Site: $SiteName"
     New-IISSite -Name $SiteName -BindingInformation :80:$SiteHostName -PhysicalPath $SiteFolderPath
     Set-ItemProperty IIS:\Sites\$SiteName -name applicationPool -value $SiteAppPool
     $manager.CommitChanges()
@@ -123,11 +131,11 @@ Execute-WithRetry {
 
 $headers = @{}
 $headers.Add("Host",$SiteHostName)
-Invoke-WebRequest -Uri http://localhost/ -Headers $headers | Format-Table Content, StatusCode
+Invoke-WebRequest -Uri http://localhost/healthcheck.htm -Headers $headers | Format-Table Content, StatusCode
 
 # dir Cert:\LocalMachine/my
 
-$cert = (Get-ChildItem cert:\LocalMachine\My   | where-object { $_.Subject -like "*" }   | Select-Object -First 1).Thumbprint
+$cert = (Get-ChildItem cert:\LocalMachine\My   | where-object { $_.Subject -like "*ameaweb.se*" }   | Select-Object -First 1).Thumbprint
 
 "Cert Hash: " + $cert
 
